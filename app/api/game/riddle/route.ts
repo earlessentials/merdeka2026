@@ -66,12 +66,12 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as { riddleId?: number; answer?: unknown };
     const riddleId = payload.riddleId === 1 || payload.riddleId === 2 ? payload.riddleId : null;
-    if (!riddleId) return jsonWithPlayer({ error: "Unknown riddle" }, 400, setCookie);
+    if (!riddleId) return jsonWithPlayer({ error: "Unknown riddle" }, 400, setCookie, request);
 
     const answer = normalizeAnswer(payload.answer);
     if (!answers[riddleId].includes(answer)) {
       const message = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
-      return jsonWithPlayer({ state: "wrong", message }, 200, setCookie);
+      return jsonWithPlayer({ state: "wrong", message }, 200, setCookie, request);
     }
 
     await ensureGameData();
@@ -86,7 +86,12 @@ export async function POST(request: Request) {
     const won = claimResult.results[0];
 
     if (won) {
-      return jsonWithPlayer({ state: "winner", code: won.code, ...successCopy(riddleId, "winner") }, 200, setCookie);
+      return jsonWithPlayer(
+        { state: "winner", code: won.code, ...successCopy(riddleId, "winner") },
+        200,
+        setCookie,
+        request,
+      );
     }
 
     const existing = await db
@@ -95,11 +100,16 @@ export async function POST(request: Request) {
       .first<RiddleRow>();
 
     if (existing?.claimedBy === playerId) {
-      return jsonWithPlayer({ state: "winner", code: existing.code, ...successCopy(riddleId, "winner") }, 200, setCookie);
+      return jsonWithPlayer(
+        { state: "winner", code: existing.code, ...successCopy(riddleId, "winner") },
+        200,
+        setCookie,
+        request,
+      );
     }
 
-    return jsonWithPlayer({ state: "late", ...successCopy(riddleId, "late") }, 200, setCookie);
+    return jsonWithPlayer({ state: "late", ...successCopy(riddleId, "late") }, 200, setCookie, request);
   } catch {
-    return jsonWithPlayer({ error: "Answer check unavailable" }, 500, setCookie);
+    return jsonWithPlayer({ error: "Answer check unavailable" }, 500, setCookie, request);
   }
 }
