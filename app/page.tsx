@@ -36,6 +36,25 @@ type SoundKind = "ambient" | "toggle" | "off" | "spin" | "win" | "wrong" | "late
 type SoundNote = [number, number, number, OscillatorType];
 
 const SOUND_EVENT = "pearling-sound";
+const GAME_BACKEND = "https://pearling-merdeka2026.pearling501936.chatgpt.site";
+const PLAYER_STORAGE_KEY = "pearling_merdeka_player";
+
+function gameApi(path: string) {
+  if (typeof window === "undefined") return path;
+  const brandedHost = window.location.hostname === "pearlinglim.com"
+    || window.location.hostname === "www.pearlinglim.com";
+  if (!brandedHost) return path;
+
+  let playerId = window.localStorage.getItem(PLAYER_STORAGE_KEY);
+  if (!playerId || !/^[a-f0-9-]{36}$/i.test(playerId)) {
+    playerId = crypto.randomUUID();
+    window.localStorage.setItem(PLAYER_STORAGE_KEY, playerId);
+  }
+
+  const url = new URL(path, GAME_BACKEND);
+  url.searchParams.set("player", playerId);
+  return url.toString();
+}
 
 const spinNotes: SoundNote[] = Array.from({ length: 32 }, (_, index) => [
   [330, 392, 494, 392][index % 4],
@@ -389,9 +408,9 @@ function RiddleCard({
     if (!answer.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const response = await fetch("/api/game/riddle", {
+      const response = await fetch(gameApi("/api/game/riddle"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
         body: JSON.stringify({ riddleId: number, answer }),
       });
       const data = (await response.json()) as RiddleResult | { error: string };
@@ -546,7 +565,7 @@ export default function Home() {
 
   async function loadStatus() {
     try {
-      const response = await fetch("/api/game/status", { cache: "no-store" });
+      const response = await fetch(gameApi("/api/game/status"), { cache: "no-store" });
       if (!response.ok) throw new Error("status unavailable");
       const data = (await response.json()) as GameStatus;
       setStatus(data);
@@ -575,7 +594,7 @@ export default function Home() {
     setShowCard(false);
     emitSound("spin");
     try {
-      const response = await fetch("/api/game/spin", { method: "POST" });
+      const response = await fetch(gameApi("/api/game/spin"), { method: "POST" });
       const data = (await response.json()) as
         | { state: "claimed" | "existing"; prize: WheelPrize; remaining: number }
         | { state: "soldout"; remaining: 0 };
@@ -607,7 +626,7 @@ export default function Home() {
     if (!pendingPrize || revealing || cardFlipped) return;
     setRevealing(true);
     try {
-      const response = await fetch("/api/game/reveal", { method: "POST" });
+      const response = await fetch(gameApi("/api/game/reveal"), { method: "POST" });
       const data = (await response.json()) as { prizeType: PrizeType; code: string };
       if (!response.ok || !data.code) throw new Error("reveal unavailable");
       setRevealedPrize(data);
