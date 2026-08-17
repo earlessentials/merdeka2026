@@ -84,8 +84,9 @@ export async function GET(request: Request) {
       },
       200,
       setCookie,
+      request,
     );
   } catch {
-    return jsonWithPlayer({ error: "Game status unavailable" }, 500, setCookie);
+    return jsonWithPlayer({ error: "Game status unavailable" }, 500, setCookie, request);
   }
 }
