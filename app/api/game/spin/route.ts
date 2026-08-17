@@ -40,6 +40,7 @@ export async function POST(request: Request) {
         },
         200,
         setCookie,
+        request,
       );
     }
 
@@ -70,9 +71,10 @@ export async function POST(request: Request) {
           { state: "existing", prize: { ...racedExisting, revealed: false }, remaining: await remainingCount() },
           200,
           setCookie,
+          request,
         );
       }
-      return jsonWithPlayer({ state: "soldout", remaining: 0 }, 200, setCookie);
+      return jsonWithPlayer({ state: "soldout", remaining: 0 }, 200, setCookie, request);
     }
 
     return jsonWithPlayer(
@@ -83,8 +85,9 @@ export async function POST(request: Request) {
       },
       200,
       setCookie,
+      request,
     );
   } catch {
-    return jsonWithPlayer({ error: "Spin unavailable" }, 500, setCookie);
+    return jsonWithPlayer({ error: "Spin unavailable" }, 500, setCookie, request);
   }
 }
