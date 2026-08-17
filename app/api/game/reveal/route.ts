@@ -20,11 +20,11 @@ export async function POST(request: Request) {
     const prize = result.results[0];
 
     if (!prize) {
-      return jsonWithPlayer({ error: "Spin the wheel first" }, 404, setCookie);
+      return jsonWithPlayer({ error: "Spin the wheel first" }, 404, setCookie, request);
     }
 
-    return jsonWithPlayer(prize, 200, setCookie);
+    return jsonWithPlayer(prize, 200, setCookie, request);
   } catch {
-    return jsonWithPlayer({ error: "Reveal unavailable" }, 500, setCookie);
+    return jsonWithPlayer({ error: "Reveal unavailable" }, 500, setCookie, request);
   }
 }
